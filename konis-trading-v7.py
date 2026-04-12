@@ -910,8 +910,8 @@ class ScalpingBotv7:
             if not self._dashboard_redis:
                 import redis
                 self._dashboard_redis = redis.Redis(
-                    host="localhost",  # Dashboard Redis is always local
-                    port=int(os.getenv("REDIS_PORT", "6379")),
+                    host=_cfg.REDIS_HOST,
+                    port=_cfg.REDIS_PORT,
                     decode_responses=True,
                     socket_timeout=2,
                     socket_connect_timeout=2,
