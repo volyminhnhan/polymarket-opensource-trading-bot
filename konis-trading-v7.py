@@ -1477,7 +1477,7 @@ class ScalpingBotv7:
                     pos = await _v7_actions.execute_entry(
                         self, market, yes_id, no_id, _me_side, _me_ask,
                         _me_amount, _cfg.MAX_RETRIES,
-                        max_fill_price=0.95, entry_meta=_me_meta)
+                        max_fill_price=0, entry_meta=_me_meta)  # no slippage cap for manual entries
                     if pos:
                         pos.entry_type = "MANUAL"
                         self._seeded_this_window.add(cid)
