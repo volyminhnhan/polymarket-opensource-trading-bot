@@ -1,0 +1,20 @@
+{
+  "markets": [
+    {
+      "slug_pattern": "eth-updown-15m",
+      "name": "ETH 15m"
+    },
+    {
+      "slug_pattern": "btc-updown-15m",
+      "name": "BTC 15m"
+    },
+    {
+      "slug_pattern": "sol-updown-15m",
+      "name": "SOL 15m"
+    },
+    {
+      "slug_pattern": "xrp-updown-15m",
+      "name": "XRP 15m"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# KoNiS Polymarket Trading Bot v7
+# Open Source Polymarket Trading Bot
 
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/konistech)
 
@@ -9,15 +9,24 @@ If this project helped you, consider supporting its development:
 
 ---
 
-**Fast trading tool for [Polymarket](https://polymarket.com) 5-minute binary outcome markets.**
+**Open source trading bot for [Polymarket](https://polymarket.com) binary outcome markets (BTC, ETH, SOL, XRP).**
 
-Out of the box, this bot works as a **standalone trading terminal** — use the web dashboard to manually enter YES/NO positions with one click, set TP/SL, and manage exits in real time. No prediction API required. Set `V7_MANAGE_POSITIONS_ONLY=true` and you're ready to trade.
+This repo includes **two bot versions** with different strategies:
 
-**Prerequisites for dashboard:** Install [Redis](https://redis.io/download) on localhost (the bot publishes its state to Redis, and the dashboard reads it).
+| | **V3** | **V7** |
+|---|--------|--------|
+| **Strategy** | DCA, Rebalance, Volatility Farming | Manual Trading or Prediction-Based |
+| **Markets** | 15-minute windows | 5-minute windows |
+| **Entry** | Dual-side (YES + NO) with DCA averaging | Single-side based on prediction or manual click |
+| **Exit** | Combined TP, rebalance sells, loss cuts | Hold for resolution, TP/SL, or prediction exit |
+| **Config** | `.env.v3.example` | `.env.v7.example` |
+| **Run** | `python konis-trading-v3.py` | `python konis-trading-v7.py` |
 
-**Optionally**, connect to the [KoNiS AI](https://konis.ai) prediction engine for **fully automated trading**. The bot enters positions on the predicted winning side of 5-minute crypto markets (BTC, ETH, SOL, XRP), then holds until resolution. Winning side resolves to $1.00, losing side to $0.00.
+Out of the box, **V7** works as a **standalone trading terminal** — use the web dashboard to manually enter YES/NO positions with one click, set TP/SL, and manage exits in real time. No prediction API required. Set `V7_MANAGE_POSITIONS_ONLY=true` and you're ready to trade.
 
-The KoNiS prediction engine analyzes real-time data from **7 centralized exchanges** (Binance, OKX, Bybit, Gate.io, Phemex, CoinEx, BingX) — including cross-exchange price consensus, leader-weighted directional signals, orderbook depth imbalance, funding rates, and whale flow tracking — to predict short-term price direction with 65–92% accuracy.
+**Prerequisites:** Install [Redis](https://redis.io/download) on localhost (the bot publishes its state to Redis for the dashboard and health checks).
+
+**Optionally**, connect to the [KoNiS AI](https://konis.ai) prediction engine for **fully automated trading**. The prediction engine analyzes real-time data from **7 centralized exchanges** (Binance, OKX, Bybit, Gate.io, Phemex, CoinEx, BingX) and whale flows to predict short-term price direction with 65–92% accuracy.
 
 > **Prediction API & RPC endpoints are provided through [konis.ai](https://konis.ai)**
 > Sign up to get your prediction API credentials for automated mode.
@@ -48,7 +57,7 @@ The KoNiS prediction engine analyzes real-time data from **7 centralized exchang
 
 The bot supports two operating modes:
 
-### Mode 1: Manual Entry (Dashboard)
+### V7 Mode 1: Manual Entry (Dashboard)
 
 ```env
 V7_MANAGE_POSITIONS_ONLY=true
@@ -83,7 +92,7 @@ python dashboard/dashboard-server.py
 
 This mode is ideal for traders who want to see the prediction data and make their own entry decisions.
 
-### Mode 2: Prediction-Based (Automated)
+### V7 Mode 2: Prediction-Based (Automated)
 
 ```env
 V7_MANAGE_POSITIONS_ONLY=false
@@ -129,11 +138,11 @@ The bot automatically enters positions based on KoNiS AI prediction signals:
 
 ## Strategy Overview
 
-### Why 5-Minute Markets?
+### Polymarket Binary Outcome Markets
 
-Polymarket offers ultra-short-term binary outcome markets (e.g., "Will BTC price be higher in 5 minutes?"). These markets:
+Polymarket offers ultra-short-term binary outcome markets (e.g., "Will BTC price be higher in 5/15 minutes?"). These markets:
 
-- Resolve every 5 minutes with a definitive YES/NO outcome
+- Resolve every 5 or 15 minutes with a definitive YES/NO outcome
 - YES + NO tokens always sum to $1.00
 - Entry prices typically range $0.30–$0.70 (50/50 markets hover around $0.50)
 - Profit = $1.00 minus entry price on a correct prediction
@@ -162,15 +171,41 @@ The KoNiS AI model ingests real-time data from **7 CEXs** (Binance, OKX, Bybit, 
 
 The model's confidence stabilizes around 60 seconds into each window, with accuracy improving as the window progresses.
 
+### V3 Strategy: DCA, Rebalance & Volatility Farming
+
+V3 trades **15-minute markets** with a fundamentally different approach — instead of picking one side, it maintains **dual-side positions** (both YES and NO) and profits through position management:
+
+1. **Entry** — Buys the predicted winning side at entry price, and optionally the cheap losing side
+2. **DCA (Dollar-Cost Averaging)** — Averages down on positions as prices move. Configurable DCA amount, max position size, and cooldown
+3. **Rebalance** — When the winning side gains value, sells a portion and buys more of the cheap side. Locks in profits while maintaining exposure
+4. **Volatility Farming** — In choppy markets where prices oscillate, the bot profits from repeatedly buying low and selling high on both sides
+5. **Loss Control** — Automatic loss cuts when positions drop beyond threshold, cheap loser DCA for recovery, and FJ (Final Judgment) insurance near window end
+
+**Key V3 config (`.env.v3.example`):**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `V3_ENTRY_AMOUNT_USD` | 50 | Entry size per side |
+| `V3_DCA_AMOUNT_USD` | 25 | DCA top-up amount |
+| `V3_MAX_POSITION_COST_USD` | 200 | Max total invested per market |
+| `V3_DCA_MODE` | rebalance | `rebalance` or `simple` |
+| `V3_REBALANCE_GAIN_PCT` | 0.10 | Sell when winner gains 10%+ |
+| `V3_REBALANCE_HEDGE_PCT` | 0.20 | Reinvest 20% of gains into losing side |
+| `SCALPING_COMBINED_TP_PCT` | 0.165 | Take profit at 16.5% combined PnL |
+| `V3_DCA_LOSS_CUT_PCT` | 0.70 | Cut losses at 70% drawdown |
+
 ---
 
 ## Project Structure
 
 ```
 mr-konis-pol-bot/
-├── konis-trading-v7.py              # Main bot entry point
-├── scalping_markets_5m.json         # Market definitions (token IDs)
-├── .env.example                     # Configuration template
+├── konis-trading-v3.py              # V3 bot — DCA, rebalance, volatility farming
+├── konis-trading-v7.py              # V7 bot — manual or prediction-based
+├── scalping_markets_5m.json         # V7 market definitions (5-minute)
+├── scalping_markets_15m.json        # V3 market definitions (15-minute)
+├── .env.v3.example                  # V3 configuration template
+├── .env.v7.example                  # V7 configuration template
 ├── requirements.txt                 # Python dependencies
 ├── README.md                        # This file
 │
@@ -187,25 +222,17 @@ mr-konis-pol-bot/
 │   ├── package.json
 │   └── tsconfig.json
 │
-└── lib/                             # Bot modules
-    ├── v7-bot-config-and-logging.py           # Environment config & logging
-    ├── v7-hedge-position.py                   # Position state model (BotState)
-    ├── v7-prediction-hedge-strategy-engine.py # Core strategy engine
-    ├── v7-seed-and-cut-strategy-actions.py    # Entry/exit order logic
-    ├── v7-dashboard-render-helper.py          # Terminal UI rendering
-    ├── v7-pace-detect-entry-logic.py          # Pace detection for entries
-    ├── v7-position-sync-from-api.py           # Position sync from REST API
-    ├── v7-oracle-gate-computation.py          # Oracle gate (optional)
-    ├── v7-entry-side-selection-logic.py       # Prediction-based side selection
-    ├── v7-ws-price-handler.py                 # WebSocket price feed handler
-    ├── v7-ws-prediction-client.py             # WebSocket prediction client
-    ├── binance-ws-price-feed.py               # OKX/Binance WebSocket feed
-    ├── polymarket-ws-orderbook-feed.py         # Polymarket orderbook WebSocket
-    ├── polymarket_bot_main.py                 # Polymarket CLOB API wrapper
-    ├── konis-core-order-execution-with-retry.py # Order execution with retry
-    ├── subgraph_positions.py                  # On-chain position queries
-    ├── terminal_ui.py                         # Full terminal dashboard
-    └── mongo_persistence.py                   # MongoDB trade persistence (optional)
+└── lib/                             # Shared modules (used by both V3 and V7)
+    ├── v7-*.py                      # V7-specific modules (12 files)
+    ├── polymarket_bot_main.py       # Polymarket CLOB API wrapper
+    ├── market_sell_processor.py     # Parallel sell execution (V3)
+    ├── terminal_ui.py               # Full terminal dashboard
+    ├── mongo_persistence.py         # MongoDB trade persistence (optional)
+    ├── subgraph_positions.py        # On-chain position queries
+    ├── konis-core-order-execution-with-retry.py  # Order execution with retry
+    ├── binance-ws-price-feed.py     # Binance WebSocket feed (V7)
+    ├── okx-ws-price-feed.py         # OKX WebSocket feed (V3)
+    └── polymarket-ws-orderbook-feed.py  # Polymarket orderbook WebSocket
 ```
 
 ---
@@ -214,9 +241,9 @@ mr-konis-pol-bot/
 
 - **Python** 3.10+
 - **Polymarket account** with funded wallet
-- **KoNiS API credentials** — sign up at [konis.ai](https://konis.ai)
+- **KoNiS API credentials** (optional) — sign up at [konis.ai](https://konis.ai) for automated prediction mode
 - **Polygon RPC endpoint** — from [Chainstack](https://chainstack.com), [Alchemy](https://alchemy.com), [Infura](https://infura.io), or similar
-- **Redis** (optional) — for health checks and TUI publishing
+- **Redis** — required for dashboard and bot communication
 - **MongoDB** (optional) — for trade history persistence
 
 ---
@@ -251,7 +278,12 @@ pip install -r requirements.txt
 ### 4. Configure environment
 
 ```bash
-cp .env.example .env
+# For V7 (manual trading or prediction-based):
+cp .env.v7.example .env
+
+# For V3 (DCA, rebalance, volatility farming):
+cp .env.v3.example .env
+
 # Edit .env with your credentials (see Configuration section)
 ```
 
@@ -350,34 +382,30 @@ V7_MIN_CONFIDENCE=0.70
 
 ## Running the Bot
 
-### Basic (Dry Run with TUI Dashboard)
+### V7 (Manual / Prediction-Based)
 
 ```bash
+# Dry run (simulation)
 python konis-trading-v7.py
-```
 
-### With Custom Config
-
-```bash
+# With config
 python konis-trading-v7.py --env .env
-```
 
-### Headless Mode (Server Deployment)
-
-```bash
+# Headless (server deployment)
 python konis-trading-v7.py --env .env --headless
 ```
 
-### Dry Run Mode (Simulation)
+### V3 (DCA / Rebalance / Volatility Farming)
 
 ```bash
-python konis-trading-v7.py --env .env --dry-run
-```
+# Dry run (simulation)
+python konis-trading-v3.py
 
-### With Custom Markets File
+# With config
+python konis-trading-v3.py --env .env
 
-```bash
-python konis-trading-v7.py --env .env --markets scalping_markets_5m.json
+# Headless (server deployment)
+python konis-trading-v3.py --env .env --headless
 ```
 
 ### Background (Linux Server)
