@@ -9,14 +9,16 @@ If this project helped you, consider supporting its development:
 
 ---
 
-**Prediction-driven automated trading bot for [Polymarket](https://polymarket.com) 5-minute binary outcome markets.**
+**Fast trading tool for [Polymarket](https://polymarket.com) 5-minute binary outcome markets.**
 
-The bot uses KoNiS AI prediction signals to enter positions on the predicted winning side of 5-minute crypto markets (BTC, ETH, SOL, XRP), then holds until resolution. Winning side resolves to $1.00, losing side to $0.00.
+Out of the box, this bot works as a **standalone trading terminal** — use the web dashboard to manually enter YES/NO positions with one click, set TP/SL, and manage exits in real time. No prediction API required. Set `V7_MANAGE_POSITIONS_ONLY=true` and you're ready to trade.
+
+**Optionally**, connect to the [KoNiS AI](https://konis.ai) prediction engine for **fully automated trading**. The bot enters positions on the predicted winning side of 5-minute crypto markets (BTC, ETH, SOL, XRP), then holds until resolution. Winning side resolves to $1.00, losing side to $0.00.
 
 The KoNiS prediction engine analyzes real-time data from **7 centralized exchanges** (Binance, OKX, Bybit, Gate.io, Phemex, CoinEx, BingX) — including cross-exchange price consensus, leader-weighted directional signals, orderbook depth imbalance, funding rates, and whale flow tracking — to predict short-term price direction with 65–92% accuracy.
 
 > **Prediction API & RPC endpoints are provided through [konis.ai](https://konis.ai)**
-> Sign up to get your prediction API credentials and access to the KoNiS prediction engine.
+> Sign up to get your prediction API credentials for automated mode.
 
 ---
 
