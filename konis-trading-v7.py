@@ -1306,7 +1306,10 @@ class ScalpingBotv7:
                 return
 
             # --- No position yet: check entry conditions ---
-            if _cfg.MANAGE_POSITIONS_ONLY:
+            # Manual entries from dashboard bypass manage-only mode
+            if self._manual_entry_cmd:
+                pass  # fall through to manual entry handler below
+            elif _cfg.MANAGE_POSITIONS_ONLY:
                 return  # manage-only mode: skip new entries
             slug = market.get("slug", "?")
             _prices = f"YES=${yes_mid:.3f} NO=${no_mid:.3f}"
