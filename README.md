@@ -64,7 +64,7 @@ The KoNiS prediction engine analyzes real-time data from **7 centralized exchang
 
 1. **ENTRY** — Bot receives prediction (UP or DOWN with confidence score). If confidence meets threshold, it buys YES or NO tokens on Polymarket at current market price.
 2. **HEDGE** (optional) — If volatility spikes, bot can hedge by buying the opposite side at a cheap price.
-3. **HOLD** — No selling. Bot holds until the 5-minute market resolves. Winning tokens → $1.00, losing → $0.00.
+3. **HOLD** — Bot holds until the 5-minute market resolves. Winning tokens → $1.00, losing → $0.00. Early exit is driven by `V7_SL_RATIO` (stop loss) and `V7_TP_RATIO` (take profit). Set both to `0` to fully hold and trust the prediction data. Hint: `V7_SL_RATIO=0.40` (i.e. ~60-70% loss from entry) is safe in most cases — if a position dips below this, ~95% of the time it won't bounce back.
 4. **ARCHIVE** — PnL is calculated and logged. State is cleared for the next window.
 
 ---
