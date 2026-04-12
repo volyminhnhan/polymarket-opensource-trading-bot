@@ -13,6 +13,8 @@ If this project helped you, consider supporting its development:
 
 Out of the box, this bot works as a **standalone trading terminal** — use the web dashboard to manually enter YES/NO positions with one click, set TP/SL, and manage exits in real time. No prediction API required. Set `V7_MANAGE_POSITIONS_ONLY=true` and you're ready to trade.
 
+**Prerequisites for dashboard:** Install [Redis](https://redis.io/download) on localhost (the bot publishes its state to Redis, and the dashboard reads it).
+
 **Optionally**, connect to the [KoNiS AI](https://konis.ai) prediction engine for **fully automated trading**. The bot enters positions on the predicted winning side of 5-minute crypto markets (BTC, ETH, SOL, XRP), then holds until resolution. Winning side resolves to $1.00, losing side to $0.00.
 
 The KoNiS prediction engine analyzes real-time data from **7 centralized exchanges** (Binance, OKX, Bybit, Gate.io, Phemex, CoinEx, BingX) — including cross-exchange price consensus, leader-weighted directional signals, orderbook depth imbalance, funding rates, and whale flow tracking — to predict short-term price direction with 65–92% accuracy.
@@ -53,6 +55,21 @@ V7_MANAGE_POSITIONS_ONLY=true
 ```
 
 In this mode, the bot does **not** auto-enter positions. Instead, you use the **KoNiS Flash Dashboard** (web UI) to manually enter and manage positions with one-click buttons.
+
+**Start the dashboard:**
+
+```bash
+# Terminal 1: Start the bot
+python konis-trading-v7.py --env .env
+
+# Terminal 2: Start the dashboard server
+python dashboard/dashboard-server.py
+
+# Open http://localhost:8901 in your browser
+```
+
+> **Requires Redis** running on localhost:6379. The bot publishes live state to Redis, and the dashboard reads it.
+> Install Redis: [redis.io/download](https://redis.io/download) | Ubuntu: `sudo apt install redis-server` | Mac: `brew install redis` | Windows: use [Memurai](https://www.memurai.com/) or WSL.
 
 ![KoNiS Flash Dashboard](images/konis-flash-dashboard.png)
 
@@ -156,6 +173,10 @@ mr-konis-pol-bot/
 ├── .env.example                     # Configuration template
 ├── requirements.txt                 # Python dependencies
 ├── README.md                        # This file
+│
+├── dashboard/                       # Web trading dashboard
+│   ├── dashboard-server.py          # Local HTTP server (serves HTML + Redis API)
+│   └── konis-trading.html           # KoNiS Flash dashboard UI
 │
 ├── redeem-service/                  # Auto-redeem resolved positions (Node.js)
 │   ├── src/

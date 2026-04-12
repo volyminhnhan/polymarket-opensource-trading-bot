@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KONIS FLASH - Trading Dashboard</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #000; color: #e0e0e0; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  font-size: 13px; line-height: 1.4; height: 100vh; padding: 8px; display: flex; flex-direction: column;
+}
+.container { width: 100%; display: flex; flex-direction: column; flex: 1; }
+
+/* Colors matching ANSI terminal */
+.green { color: #00ff00; } .bright-green { color: #5fff5f; }
+.red { color: #ff0000; } .bright-red { color: #ff5f5f; }
+.yellow { color: #ffff00; } .bright-yellow { color: #ffff5f; }
+.cyan { color: #00ffff; } .bright-cyan { color: #5fffff; }
+.blue { color: #5f87ff; } .magenta { color: #ff5fff; }
+.dim { color: #808080; } .bold { font-weight: bold; }
+.bright-white { color: #ffffff; font-weight: bold; }
+
+/* Box styles - single border = thin cyan, double = thicker cyan (matching TUI box-drawing) */
+.box { border: 1px solid #00ffff; margin: 4px 0; padding: 6px 10px; }
+.box-double { border: 2px solid #5f87ff; margin: 4px 0; padding: 6px 10px; }
+.box-green { border-color: #5fff5f; }
+.box-red { border-color: #ff5f5f; }
+
+/* Logo */
+.logo-box { border: 2px solid #5f87ff; text-align: center; padding: 10px; margin-bottom: 4px; background: #000; }
+.logo-art { color: #5fffff; font-size: 11px; line-height: 1.15; white-space: pre; }
+.logo-subtitle { color: #e0e0e0; font-weight: bold; margin-top: 4px; }
+.logo-instance { color: #808080; font-size: 12px; }
+
+/* Header bar */
+.header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.badge { padding: 2px 8px; border-radius: 3px; font-weight: bold; font-size: 12px; display: inline-block; }
+.badge-open { background: #005f00; color: #5fff5f; }
+.badge-waiting { background: #5f5f00; color: #ffff5f; }
+.badge-blocked { background: #5f0000; color: #ff5f5f; }
+
+/* Stats */
+.stats-title { text-align: center; font-weight: bold; color: #5fffff; }
+.stats-row { display: flex; gap: 16px; flex-wrap: wrap; padding: 3px 0; }
+
+/* Positions */
+.position-row { padding: 4px 0; }
+.separator { border-top: 1px dashed #808080; margin: 4px 0; }
+.separator-double { border-top: 2px solid #808080; margin: 4px 0; }
+
+/* Big ASCII price display - matching TUI exactly */
+.big-price-box { display: flex; justify-content: center; align-items: flex-start; padding: 8px 0; gap: 0; }
+.big-price-half { flex: 1; display: flex; justify-content: center; }
+.big-ascii { white-space: pre; font-size: 12px; line-height: 1.15; letter-spacing: 0; }
+.big-ascii-label { font-size: 12px; line-height: 1.15; white-space: pre; }
+
+/* Progress bar */
+.progress-bar-container { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 4px; }
+.progress-bar { display: flex; width: 250px; height: 14px; }
+.progress-yes { background: #5fff5f; }
+.progress-no { background: #ff5f5f; }
+
+/* Trade history table */
+table { width: 100%; border-collapse: collapse; }
+th { color: #808080; text-align: left; padding: 3px 6px; font-weight: normal; font-size: 12px; }
+td { padding: 3px 6px; font-size: 12px; white-space: nowrap; }
+
+/* Logs */
+.log-entry { padding: 1px 0; font-size: 12px; word-break: break-all; }
+
+/* Connection status */
+.conn-status { position: fixed; top: 4px; right: 8px; font-size: 11px; padding: 2px 8px; border-radius: 3px; z-index: 100; }
+.conn-ok { background: #003300; color: #5fff5f; }
+.conn-err { background: #330000; color: #ff5f5f; }
+
+/* Exit button */
+.exit-btn {
+  background: #5f0000; color: #ff5f5f; border: 2px solid #ff5f5f; padding: 6px 18px;
+  font-family: inherit; font-size: 14px; font-weight: bold; cursor: pointer;
+  letter-spacing: 1px; transition: all 0.2s;
+}
+.exit-btn:hover { background: #ff5f5f; color: #000; }
+.exit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.exit-btn.success { border-color: #5fff5f; color: #5fff5f; background: #003300; }
+.exit-btn.no-pos { border-color: #ffff5f; color: #ffff5f; background: #3f3f00; }
+
+/* Loosen buttons */
+.loosen-btn {
+  background: #3f2f00; color: #ffb95f; border: 2px solid #ffb95f; padding: 6px 14px;
+  font-family: inherit; font-size: 13px; font-weight: bold; cursor: pointer;
+  letter-spacing: 1px; transition: all 0.2s; margin: 0 4px;
+}
+.loosen-btn:hover { background: #ffb95f; color: #000; }
+.loosen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.loosen-btn.success { border-color: #5fff5f; color: #5fff5f; background: #003300; }
+
+/* Side toggle (ENTER YES / ENTER NO) */
+.side-toggle { display: flex; justify-content: center; gap: 8px; padding: 6px 0; margin-bottom: 4px; }
+.side-btn {
+  padding: 6px 20px; font-family: inherit; font-size: 13px; font-weight: bold;
+  cursor: pointer; letter-spacing: 1px; transition: all 0.2s; border: 2px solid;
+}
+.side-btn.yes { background: transparent; color: #5f87ff; border-color: #5f87ff; }
+.side-btn.yes.active { background: #5fff5f; color: #000; border-color: #5fff5f; }
+.side-btn.no { background: transparent; color: #5f87ff; border-color: #5f87ff; }
+.side-btn.no.active { background: #ff5f5f; color: #000; border-color: #ff5f5f; }
+
+/* Entry amount buttons */
+.entry-row { display: flex; justify-content: center; gap: 6px; padding: 8px 0; flex-wrap: wrap; }
+.entry-btn {
+  background: #1a1a3a; color: #8f8fff; border: 2px solid #5f5fff; padding: 8px 16px;
+  font-family: inherit; font-size: 15px; font-weight: bold; cursor: pointer;
+  transition: all 0.2s;
+}
+.entry-btn:hover { background: #5f5fff; color: #000; }
+.entry-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.entry-btn.sent { border-color: #5fff5f; color: #5fff5f; background: #003300; }
+.entry-sep { color: #808080; align-self: center; padding: 0 6px; font-size: 15px; }
+
+/* Config override inputs */
+.config-row { display: flex; justify-content: center; gap: 20px; padding: 8px 0; flex-wrap: wrap; align-items: center; }
+.config-group { display: flex; align-items: center; gap: 6px; }
+.config-label { color: #ffff5f; font-size: 15px; font-weight: bold; }
+.config-input {
+  background: #111; color: #e0e0e0; border: 2px solid #5f87ff; padding: 7px 10px;
+  font-family: inherit; font-size: 15px; width: 65px; text-align: center;
+}
+.config-apply {
+  background: #002244; color: #5fffff; border: 2px solid #5fffff; padding: 7px 14px;
+  font-family: inherit; font-size: 15px; font-weight: bold; cursor: pointer;
+  transition: all 0.2s;
+}
+.config-apply:hover { background: #5fffff; color: #000; }
+.config-apply.sent { border-color: #5fff5f; color: #5fff5f; background: #003300; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  body { font-size: 11px; padding: 4px; }
+  .logo-art { font-size: 6px; }
+  .big-ascii { font-size: 8px; }
+  .stats-row { gap: 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="connStatus" class="conn-status conn-ok">LIVE</div>
+  <!-- Logo -->
+  <div class="logo-box">
+    <div class="logo-art">██╗  ██╗ ██████╗ ███╗   ██╗██╗███████╗  ███████╗██╗      █████╗ ███████╗██╗  ██╗
+██║ ██╔╝██╔═══██╗████╗  ██║██║██╔════╝  ██╔════╝██║     ██╔══██╗██╔════╝██║  ██║
+█████╔╝ ██║   ██║██╔██╗ ██║██║███████╗  █████╗  ██║     ███████║███████╗███████║
+██╔═██╗ ██║   ██║██║╚██╗██║██║╚════██║  ██╔══╝  ██║     ██╔══██║╚════██║██╔══██║
+██║  ██╗╚██████╔╝██║ ╚████║██║███████║  ██║     ███████╗██║  ██║███████║██║  ██║
+╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝╚══════╝  ╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝</div>
+    <div class="logo-subtitle">Polymarket Scalping Bot</div>
+    <div class="logo-instance" id="instanceId">Instance: ---</div>
+    <div id="configTag" style="color: #5fff5f; font-size: 1.1em; font-weight: bold; margin-top: 4px; letter-spacing: 1px;"></div>
+  </div>
+
+  <!-- Header Bar -->
+  <div class="box" id="headerBox">
+    <div class="header">
+      <span id="statusBadge" class="badge badge-waiting">WAITING</span>
+      <span><span class="dim">Window:</span> <span class="cyan" id="windowTime">--:--</span></span>
+      <span><span class="dim">Elapsed:</span> <span class="yellow" id="elapsedTime">0.0m / 15m</span></span>
+    </div>
+  </div>
+
+  <!-- Prediction (shown when no positions) -->
+  <div class="box" id="predictionBox" style="display:none;">
+    <span class="dim">Prediction:</span> <span id="predDirection">---</span>
+    <span class="dim" style="margin-left:12px;">Confidence:</span> <span id="predConfidence">---</span>
+  </div>
+
+  <!-- Session Stats -->
+  <div class="box" id="statsBox">
+    <div class="stats-title" id="statsTitle">SESSION STATS</div>
+    <div style="border-top:1px solid #5f87ff; margin:4px 0;"></div>
+    <div class="stats-row" id="statsRow1">
+      <span><span class="dim">Trades:</span> <span class="bright-cyan">0</span></span>
+      <span><span class="dim">Wins:</span> <span class="bright-green">0</span></span>
+      <span><span class="dim">Losses:</span> <span class="bright-red">0</span></span>
+      <span><span class="dim">Win Rate:</span> <span class="dim">N/A</span></span>
+    </div>
+    <div class="stats-row" id="statsRow2">
+      <span><span class="dim">Total PnL:</span> <span id="totalPnl">$0.00</span></span>
+      <span><span class="dim">Balance:</span> <span class="bright-green" id="balance">$0.00</span></span>
+    </div>
+  </div>
+
+  <!-- Big ASCII Price Display (TIME + YES/NO) -->
+  <div class="box" id="priceBox">
+    <div class="big-price-box">
+      <div class="big-price-half">
+        <pre class="big-ascii bright-cyan" id="timeAscii"></pre>
+      </div>
+      <div class="big-price-half">
+        <pre class="big-ascii" id="priceAscii"></pre>
+      </div>
+    </div>
+    <div class="progress-bar-container">
+      <span class="bright-green">YES</span>
+      <div class="progress-bar">
+        <div class="progress-yes" id="progressYes" style="width:50%;"></div>
+        <div class="progress-no" id="progressNo" style="width:50%;"></div>
+      </div>
+      <span class="bright-red">NO</span>
+      <span id="progressArrow" class="dim">◆◆◆</span>
+    </div>
+  </div>
+
+  <!-- Row 0: Side toggle -->
+  <div class="side-toggle">
+    <button id="sideYesBtn" class="side-btn yes active" onclick="setSide('YES')">ENTER YES</button>
+    <button id="sideNoBtn" class="side-btn no" onclick="setSide('NO')">ENTER NO</button>
+  </div>
+
+  <!-- Row 1: Entry amount buttons -->
+  <div class="entry-row">
+    <button class="entry-btn" onclick="manualEntry('fixed',5)">$5</button>
+    <button class="entry-btn" onclick="manualEntry('fixed',10)">$10</button>
+    <button class="entry-btn" onclick="manualEntry('fixed',20)">$20</button>
+    <button class="entry-btn" onclick="manualEntry('fixed',30)">$30</button>
+    <span class="entry-sep">│</span>
+    <button class="entry-btn" onclick="manualEntry('pct',20)">20%</button>
+    <button class="entry-btn" onclick="manualEntry('pct',30)">30%</button>
+    <button class="entry-btn" onclick="manualEntry('pct',50)">50%</button>
+    <button class="entry-btn" onclick="manualEntry('pct',70)">70%</button>
+    <button class="entry-btn" onclick="manualEntry('pct',100)">100%</button>
+  </div>
+
+  <!-- Row 2: Config overrides -->
+  <div class="config-row">
+    <div class="config-group">
+      <span class="config-label">CONF%</span>
+      <input id="confInput" class="config-input" type="number" placeholder="70" min="0" max="100">
+      <button class="config-apply" onclick="applyConfig('confidence')">SET</button>
+    </div>
+    <div class="config-group">
+      <span class="config-label">TP%</span>
+      <input id="tpInput" class="config-input" type="number" placeholder="%" min="0" max="100" step="0.1">
+      <button class="config-apply" onclick="applyConfig('tp')">SET</button>
+    </div>
+    <div class="config-group">
+      <span class="config-label">SL%</span>
+      <input id="slInput" class="config-input" type="number" placeholder="%" min="0" max="100" step="0.1">
+      <button class="config-apply" onclick="applyConfig('sl')">SET</button>
+    </div>
+  </div>
+
+  <!-- Row 3: Exit + Loosen buttons -->
+  <div style="text-align:center; padding:6px 0; margin-top:6px;">
+    <button id="loosenTpBtn" class="loosen-btn" onclick="loosen('tp')">LOOSEN TP</button>
+    <button id="exitAllBtn" class="exit-btn" onclick="exitAllPositions()">EXIT ALL POS</button>
+    <button id="loosenSlBtn" class="loosen-btn" onclick="loosen('sl')">LOOSEN SL</button>
+  </div>
+
+  <!-- Positions -->
+  <div id="positionsContainer"></div>
+
+  <!-- Session Summary -->
+  <div id="sessionSummary" style="display:none;"></div>
+
+  <!-- Trade History -->
+  <div class="box" id="tradeHistoryBox">
+    <div style="text-align:center; padding:2px;"><span class="bold magenta">TRADE HISTORY</span></div>
+    <div style="border-top:1px solid #5f87ff; margin:4px 0;"></div>
+    <table>
+      <thead><tr><th>#</th><th>Window</th><th>Side</th><th>Market</th><th>Entry$</th><th>Exit$</th><th>PnL %</th><th>PnL $</th><th>Dur</th><th>Reason</th></tr></thead>
+      <tbody id="tradeHistoryBody"><tr><td colspan="10" class="dim" style="text-align:center;">No trades yet</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- Candle History -->
+  <div class="box" id="candleHistoryBox">
+    <div style="text-align:center; padding:2px;"><span class="bold magenta">CANDLE HISTORY (Last 1 Hour)</span></div>
+    <div style="border-top:1px solid #5f87ff; margin:4px 0;"></div>
+    <table>
+      <thead><tr><th>Time</th><th>Status</th><th>Pred</th><th>Conf</th><th>Reason/PnL</th></tr></thead>
+      <tbody id="candleHistoryBody"><tr><td colspan="5" class="dim" style="text-align:center;">No candles yet</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- Session Logs -->
+  <div id="sessionLogsLabel" style="text-align:center; padding:6px 0 2px; color:#808080;">--- SESSION LOGS ---</div>
+  <div id="logsContainer" style="padding:0 4px; flex:1; overflow-y:auto; min-height:400px;"><div class="dim">No logs yet</div></div>
+
+  <div style="text-align:center; padding:8px; color:#808080; font-size:11px;">
+    Last updated: <span id="lastUpdated">---</span> | Refresh: 1s
+  </div>
+</div>
+
+<script>
+const API_URL = '/api/dashboard';
+let lastSavedAt = 0;
+let lastWindowTs = 0;
+
+// Demo mode — when embedded via testbot.konis.ai or ?embed=1, all action
+// buttons are neutered and show a static info alert instead of hitting the
+// bot API. The bot itself doesn't care; this is pure client-side.
+// Also hides the growing sections (session logs, candle history) and
+// clips overflow so the embedded iframe doesn't need a vertical scrollbar.
+const IS_DEMO = window.location.hostname === 'testbot.konis.ai'
+  || new URLSearchParams(window.location.search).has('embed');
+function demoBlock() {
+  if (!IS_DEMO) return false;
+  alert("this bot is for demo only, and it's auto entry with real prediction data");
+  return true;
+}
+if (IS_DEMO) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.classList.add('demo-mode');
+    const hide = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+    hide('sessionLogsLabel');
+    hide('logsContainer');
+    hide('candleHistoryBox');
+    // Kill body/html scroll so the iframe is clean even if content still overflows
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.height = 'auto';
+  });
+}
+
+// 5-line ASCII digits matching terminal_ui.py exactly
+const BIG_DIGITS = {
+  '0': ['██████╗ ','██╔══██╗','██║  ██║','██║  ██║','╚█████╔╝'],
+  '1': [' ██╗    ','███║    ','╚██║    ',' ██║    ',' ██║    '],
+  '2': ['██████╗ ','╚════██╗',' █████╔╝','██╔═══╝ ','███████╗'],
+  '3': ['██████╗ ','╚════██╗',' █████╔╝',' ╚═══██╗','██████╔╝'],
+  '4': ['██╗  ██╗','██║  ██║','███████║','╚════██║','     ██║'],
+  '5': ['███████╗','██╔════╝','███████╗','╚════██║','███████║'],
+  '6': ['██████╗ ','██╔════╝','███████╗','██╔══██║','╚█████╔╝'],
+  '7': ['███████╗','╚════██║','    ██╔╝','   ██╔╝ ','   ██║  '],
+  '8': ['██████╗ ','██╔══██╗','╚█████╔╝','██╔══██╗','╚█████╔╝'],
+  '9': ['██████╗ ','██╔══██╗','╚██████║',' ╚═══██║',' █████╔╝'],
+};
+const COLON = ['   ',' █ ','   ',' █ ','   '];
+
+function renderBigNumber(num) {
+  let d1 = String(Math.floor(num / 10) % 10);
+  let d2 = String(num % 10);
+  let lines = [];
+  for (let i = 0; i < 5; i++) {
+    lines.push(BIG_DIGITS[d1][i] + ' ' + BIG_DIGITS[d2][i]);
+  }
+  return lines;
+}
+
+function buildTimeAscii(remainingSeconds) {
+  let mins = Math.floor(Math.max(0, remainingSeconds) / 60);
+  let secs = Math.floor(Math.max(0, remainingSeconds) % 60);
+  let mmLines = renderBigNumber(Math.min(mins, 99));
+  let ssLines = renderBigNumber(Math.min(secs, 59));
+  let result = '';
+  let timeLabel = 'TIME ';
+  let pad = '     '; // same width as "TIME "
+  for (let i = 0; i < 5; i++) {
+    let label = (i === 2) ? timeLabel : pad;
+    result += label + mmLines[i] + COLON[i] + ssLines[i] + '\n';
+  }
+  return result;
+}
+
+function buildPriceAscii(yesPct, noPct) {
+  let yesLines = renderBigNumber(Math.min(Math.max(yesPct, 0), 99));
+  let noLines = renderBigNumber(Math.min(Math.max(noPct, 0), 99));
+  let result = '';
+  let yesLabel = 'YES ';
+  let noLabel = 'NO ';
+  let padYes = '    '; // same width as "YES "
+  let padNo = '   ';   // same width as "NO "
+  let sep = '  │  ';
+  for (let i = 0; i < 5; i++) {
+    let yl = (i === 2) ? yesLabel : padYes;
+    let nl = (i === 2) ? noLabel : padNo;
+    // Color: YES lines green, separator dim, NO lines red
+    result += '<span class="bright-green">' + yl + yesLines[i] + '</span>';
+    result += '<span class="dim">' + sep + '</span>';
+    result += '<span class="bright-red">' + nl + noLines[i] + '</span>\n';
+  }
+  return result;
+}
+
+function pnlClass(val) {
+  if (val > 0) return 'bright-green';
+  if (val < 0) return 'bright-red';
+  return 'dim';
+}
+function pnlStr(val, asPercent) {
+  if (asPercent) return (val >= 0 ? '+' : '') + (val * 100).toFixed(1) + '%';
+  return (val >= 0 ? '+$' : '-$') + Math.abs(val).toFixed(2);
+}
+function pnlHtml(val, asPercent) {
+  return `<span class="${pnlClass(val)}">${pnlStr(val, asPercent)}</span>`;
+}
+function pnlWhite(val, asPercent) {
+  return `<span class="bright-white">${pnlStr(val, asPercent)}</span>`;
+}
+function directionHtml(dir) {
+  if (!dir) return '<span class="dim">---</span>';
+  if (dir === 'UP' || dir === 'YES') return `<span class="bright-green">${dir}</span>`;
+  return `<span class="bright-red">${dir}</span>`;
+}
+function confidenceHtml(conf) {
+  if (!conf || conf <= 0) return '<span class="dim">---</span>';
+  let cls = conf >= 0.8 ? 'bright-green' : conf >= 0.6 ? 'bright-yellow' : 'dim';
+  return `<span class="${cls}">${(conf * 100).toFixed(0)}%</span>`;
+}
+function formatDuration(seconds) {
+  if (!seconds || seconds <= 0) return '0s';
+  let m = Math.floor(seconds / 60); let s = Math.floor(seconds % 60);
+  if (m > 0) return m + 'm' + (s > 0 ? s + 's' : '');
+  return s + 's';
+}
+function tsToTime(ts) {
+  if (!ts || ts <= 0) return '--:--';
+  let d = new Date(ts * 1000);
+  return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+function tsToDate(ts) {
+  if (!ts || ts <= 0) return '---';
+  let d = new Date(ts * 1000);
+  let months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[d.getMonth()] + ' ' + String(d.getDate()).padStart(2,'0') + ', ' +
+    String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+function stripAnsi(str) {
+  if (!str) return '';
+  return str.replace(/\x1b\[[0-9;]*m/g, '');
+}
+function escapeHtml(str) {
+  let div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function updateDashboard(data) {
+  if (!data || !data.render_kwargs) return;
+  let rk = data.render_kwargs;
+  let trades = data.trades || [];
+  let candles = data.candles || [];
+  let logs = data.logs || [];
+
+  // Instance
+  document.getElementById('instanceId').textContent = 'Instance: ' + (data.instance_id || '---');
+  // Build config tag from live values (updates when user changes via dashboard)
+  let _conf = data.cfg_min_confidence != null ? Math.round(data.cfg_min_confidence * 100) : '?';
+  let _tp = data.cfg_tp_ratio != null ? Math.round(data.cfg_tp_ratio * 100) + '%' : '?';
+  let _sl = data.cfg_sl_ratio != null ? Math.round(data.cfg_sl_ratio * 100) + '%' : '?';
+  let _sz = data.cfg_position_size_usd != null ? data.cfg_position_size_usd : '?';
+  document.getElementById('configTag').textContent = `CONF=${_conf}%  TP=${_tp}  SL=${_sl}  SIZE=$${_sz}`;
+
+  // Status badge
+  let status = rk.status || 'WAITING';
+  let badge = document.getElementById('statusBadge');
+  badge.textContent = status;
+  badge.className = 'badge badge-' + status.toLowerCase();
+
+  // Window & elapsed
+  document.getElementById('windowTime').textContent = tsToTime(rk.window_ts);
+  let wm = rk.window_minutes || 15;
+  let elapsed = rk.elapsed_minutes || 0;
+  document.getElementById('elapsedTime').textContent = elapsed.toFixed(1) + 'm / ' + wm + 'm';
+
+  // Prediction (show when no positions)
+  let positions = rk.positions || [];
+  let predBox = document.getElementById('predictionBox');
+  if (positions.length === 0) {
+    predBox.style.display = '';
+    document.getElementById('predDirection').innerHTML = directionHtml(rk.prediction);
+    document.getElementById('predConfidence').innerHTML = confidenceHtml(rk.confidence);
+  } else {
+    predBox.style.display = 'none';
+  }
+
+  // Stats
+  let totalTrades = data.total_trades || 0;
+  let winTrades = data.winning_trades || 0;
+  let lossTrades = totalTrades - winTrades;
+  let winRate = totalTrades > 0 ? (winTrades / totalTrades * 100).toFixed(1) + '%' : 'N/A';
+  let wrClass = totalTrades > 0 ? (winTrades / totalTrades >= 0.5 ? 'bright-green' : 'bright-red') : 'dim';
+  let totalPnl = data.total_pnl || 0;
+
+  document.getElementById('statsRow1').innerHTML =
+    `<span><span class="dim">Trades:</span> <span class="bright-cyan">${totalTrades}</span></span>` +
+    `<span><span class="dim">Wins:</span> <span class="bright-green">${winTrades}</span></span>` +
+    `<span><span class="dim">Losses:</span> <span class="bright-red">${lossTrades}</span></span>` +
+    `<span><span class="dim">Win Rate:</span> <span class="${wrClass}">${winRate}</span></span>`;
+
+  let bal = rk.current_balance || 0;
+  let beginBal = rk.begin_session_balance || 0;
+  let portfolio = rk.portfolio_value || 0;
+  let sessionProfit = rk.session_profit || 0;
+  let sessionProfitPct = rk.session_profit_pct || 0;
+
+  document.getElementById('statsRow2').innerHTML =
+    `<span><span class="dim">Total PnL:</span> ${pnlHtml(totalPnl)}</span>` +
+    `<span><span class="dim">Balance:</span> <span class="bright-green">$${bal.toFixed(2)}</span></span>` +
+    (beginBal > 0 ? `<span><span class="dim">Begin:</span> <span class="dim">$${beginBal.toFixed(2)}</span></span>` : '') +
+    (portfolio > 0 ? `<span><span class="dim">Total:</span> <span class="bright-yellow">$${portfolio.toFixed(2)}</span></span>` : '') +
+    (beginBal > 0 ? `<span><span class="dim">Session:</span> ${pnlHtml(sessionProfit)} (${pnlWhite(sessionProfitPct, true)})</span>` : '') +
+    `<span><span class="dim">Duration:</span> <span class="cyan">${formatDuration((Date.now()/1000) - (data.session_start || Date.now()/1000))}</span></span>`;
+
+  // Big ASCII TIME display (countdown)
+  let remaining = Math.max(0, (wm - elapsed) * 60);
+  document.getElementById('timeAscii').textContent = buildTimeAscii(remaining);
+
+  // Big ASCII YES/NO price display
+  let yp = rk.yes_price || 0;
+  let np = rk.no_price || 0;
+  let yesPct = (yp > 0 && yp < 1.0) ? Math.round(yp * 100) : 0;
+  let noPct = (np > 0 && np < 1.0) ? Math.round(np * 100) : 0;
+  document.getElementById('priceAscii').innerHTML = buildPriceAscii(yesPct, noPct);
+
+  // Progress bar
+  let total = yp + np;
+  if (total > 0) {
+    document.getElementById('progressYes').style.width = (yp / total * 100) + '%';
+    document.getElementById('progressNo').style.width = (np / total * 100) + '%';
+  }
+  // Arrow direction
+  let arrowEl = document.getElementById('progressArrow');
+  if (yesPct > 50) { arrowEl.innerHTML = '<span class="bright-green">◀◀◀</span>'; }
+  else if (noPct > 50) { arrowEl.innerHTML = '<span class="bright-red">▶▶▶</span>'; }
+  else { arrowEl.innerHTML = '<span class="dim">◆◆◆</span>'; }
+
+  // Positions
+  let posContainer = document.getElementById('positionsContainer');
+  if (positions.length === 0) {
+    posContainer.innerHTML = '';
+  } else {
+    let grouped = {};
+    positions.forEach(p => {
+      let mkt = p.market || 'unknown';
+      if (!grouped[mkt]) grouped[mkt] = [];
+      grouped[mkt].push(p);
+    });
+
+    let html = '';
+    for (let [mkt, mktPositions] of Object.entries(grouped)) {
+      let mktCost = 0, mktValue = 0, yesTokens = 0, noTokens = 0;
+      mktPositions.forEach(p => {
+        let cost = (p.size || 0) * (p.entry_price || 0);
+        let val = (p.size || 0) * (p.current_price || 0);
+        mktCost += cost; mktValue += val;
+        if (p.side === 'YES') yesTokens += p.size || 0;
+        else noTokens += p.size || 0;
+      });
+      let mktPnlUsd = mktValue - mktCost;
+      let mktPnlPct = mktCost > 0 ? mktPnlUsd / mktCost : 0;
+      let borderClass = mktPnlPct >= 0 ? 'box-green' : 'box-red';
+
+      html += `<div class="box-double ${borderClass}" style="margin-top:8px;">`;
+      html += `<div style="text-align:center;font-weight:bold;" class="bright-cyan">${mkt.toUpperCase()} (${mktPositions.length})</div>`;
+
+      if (rk.prediction) {
+        html += `<div style="padding:2px 0;"><span class="dim">Prediction:</span> ${directionHtml(rk.prediction)} <span class="dim" style="margin-left:12px;">Confidence:</span> ${confidenceHtml(rk.confidence)}</div>`;
+      }
+
+      mktPositions.forEach((p, i) => {
+        let sideClass = p.side === 'YES' ? 'bright-green' : 'bright-red';
+        let arrow = p.side === 'YES' ? '▲' : '▼';
+        let hedgeTag = p.is_hedge ? ' <span class="dim">[HEDG]</span>' : '';
+        let pnlCash = (p.size || 0) * ((p.current_price || 0) - (p.entry_price || 0));
+        let posValue = (p.size || 0) * (p.current_price || 0);
+        let dur = formatDuration(p.duration || 0);
+
+        html += `<div class="position-row">`;
+        html += `<span class="dim">Side:</span> <span class="${sideClass}">${arrow} ${p.side}</span>${hedgeTag}  `;
+        html += `<span class="dim">Entry:</span> <span class="cyan">$${(p.entry_price||0).toFixed(4)}</span>  `;
+        html += `<span class="dim">Current:</span> <span class="bright-cyan">$${(p.current_price||0).toFixed(4)}</span>  `;
+        html += `<span class="dim">Size:</span> <span class="cyan">${(p.size||0).toFixed(2)}</span> <span class="dim">($${posValue.toFixed(2)})</span>  `;
+        html += `<span class="dim">PnL:</span> ${pnlHtml(p.pnl_pct||0, true)} (${pnlWhite(pnlCash)})  `;
+        html += `<span class="dim">Dur:</span> <span class="cyan">${dur}</span>`;
+        html += `</div>`;
+        if (i < mktPositions.length - 1) html += '<div class="separator"></div>';
+      });
+
+      if (mktPositions.length > 1) {
+        let totalSize = yesTokens + noTokens;
+        let avgEntry = totalSize > 0 ? mktCost / totalSize : 0;
+        let avgCurrent = totalSize > 0 ? mktValue / totalSize : 0;
+        let coin = mkt.split('-')[0].toUpperCase();
+        html += '<div class="separator-double"></div>';
+        html += `<div class="position-row"><span class="bold magenta">${coin} AVG</span>  `;
+        html += `<span class="dim">Entry:</span> <span class="bright-yellow">$${avgEntry.toFixed(4)}</span>  `;
+        html += `<span class="dim">Current:</span> <span class="bright-cyan">$${avgCurrent.toFixed(4)}</span>  `;
+        html += `<span class="dim">Size:</span> <span class="cyan">${totalSize.toFixed(2)}</span> <span class="dim">($${mktValue.toFixed(2)})</span>  `;
+        html += `<span class="dim">PnL:</span> ${pnlHtml(mktPnlPct, true)} (${pnlWhite(mktPnlUsd)})</div>`;
+      }
+
+      let hasHedge = mktPositions.some(p => p.is_hedge);
+      if (hasHedge) {
+        let sessionCost = rk.session_total_cost || 0;
+        let sProft = rk.session_total_profit || 0;
+        let combPnlPct = sessionCost > 0 ? sProft / sessionCost : mktPnlPct;
+        let combPnlUsd = sessionCost > 0 ? sProft : mktPnlUsd;
+        html += '<div style="border-top:2px solid #808080; margin:4px 0;"></div>';
+        html += `<div><span class="bold bright-yellow">COMBINED (Main + Hedge)</span>  <span class="dim">Net PnL:</span> ${pnlHtml(combPnlPct, true)} (${pnlWhite(combPnlUsd)})`;
+        if (mktCost > 0) {
+          let RW = 0.97;
+          html += `<br><span class="dim">Resolve PnL:</span> <span class="bright-green">YES wins</span> ${pnlHtml((yesTokens*RW - mktCost)/mktCost, true)} (${pnlWhite(yesTokens*RW - mktCost)}) <span class="dim">|</span> <span class="bright-red">NO wins</span> ${pnlHtml((noTokens*RW - mktCost)/mktCost, true)} (${pnlWhite(noTokens*RW - mktCost)})`;
+        }
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+    posContainer.innerHTML = html;
+  }
+
+  // Session summary
+  let sessionSummaryEl = document.getElementById('sessionSummary');
+  let sessionTotalCost = rk.session_total_cost || 0;
+  if (sessionTotalCost > 0 && positions.length > 0) {
+    let sPnlPct = (rk.session_total_profit || 0) / sessionTotalCost;
+    let sBorder = sPnlPct >= 0 ? 'box-green' : 'box-red';
+    let yesTok = positions.filter(p => ['YES','UP'].includes((p.side||'').toUpperCase())).reduce((s,p) => s + (p.size||0), 0);
+    let noTok = positions.filter(p => ['NO','DOWN'].includes((p.side||'').toUpperCase())).reduce((s,p) => s + (p.size||0), 0);
+    let sellProceeds = rk.session_sell_proceeds || 0;
+
+    let sHtml = `<div class="box-double ${sBorder}" style="margin-top:8px;">`;
+    sHtml += `<div><span class="bold bright-white">SESSION TOTAL</span>  `;
+    sHtml += `<span class="dim">Cost:</span> <span class="bright-yellow">$${sessionTotalCost.toFixed(2)}</span>  `;
+    sHtml += `<span class="dim">Value:</span> <span class="bright-cyan">$${(rk.session_total_value||0).toFixed(2)}</span>  `;
+    sHtml += `<span class="dim">Profit:</span> ${pnlHtml(rk.session_total_profit||0)} (${pnlWhite(sPnlPct, true)})  `;
+    sHtml += `<span class="dim">Avg Entry:</span> <span class="cyan">$${(rk.session_avg_entry||0).toFixed(4)}</span>  `;
+    sHtml += `<span class="dim">Tokens:</span> <span class="cyan">${(rk.session_total_tokens||0).toFixed(0)}</span></div>`;
+
+    if (yesTok > 0 || noTok > 0) {
+      let yesVal = yesTok * 0.97, noVal = noTok * 0.97;
+      let yesPnl = yesVal + sellProceeds - sessionTotalCost;
+      let noPnl = noVal + sellProceeds - sessionTotalCost;
+      sHtml += `<div style="margin-top:4px;">`;
+      sHtml += `<span class="dim">IF YES Resolves:</span> <span class="bright-green">$${yesVal.toFixed(2)}</span> ${pnlHtml(yesPnl)} (${pnlWhite(sessionTotalCost > 0 ? yesPnl/sessionTotalCost : 0, true)})  `;
+      sHtml += `<span class="dim">|</span>  `;
+      sHtml += `<span class="dim">IF NO Resolves:</span> <span class="bright-red">$${noVal.toFixed(2)}</span> ${pnlHtml(noPnl)} (${pnlWhite(sessionTotalCost > 0 ? noPnl/sessionTotalCost : 0, true)})</div>`;
+    }
+    sHtml += `</div>`;
+    sessionSummaryEl.innerHTML = sHtml;
+    sessionSummaryEl.style.display = '';
+  } else {
+    sessionSummaryEl.style.display = 'none';
+  }
+
+  // Trade history
+  let tbody = document.getElementById('tradeHistoryBody');
+  if (trades.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" class="dim" style="text-align:center;">No trades yet</td></tr>';
+  } else {
+    let rows = '';
+    [...trades].reverse().forEach((t, i) => {
+      let num = trades.length - i;
+      let side = t.side || '?';
+      let sideClass = (side === 'YES' || side === 'UP') ? 'bright-green' : 'bright-red';
+      let mktSlug = t.market_slug || '';
+      let parts = mktSlug.split('-');
+      let mktShort = parts.length > 1 ? parts[0].toUpperCase() + '-' + parts[parts.length-1].toUpperCase() : parts[0]?.toUpperCase() || '---';
+      let reason = t.exit_reason || '';
+      let reasonClass = (reason.includes('TP') || reason.toLowerCase().includes('profit')) ? 'bright-green' :
+                        (reason.includes('SL') || reason.toLowerCase().includes('loss')) ? 'bright-red' : 'yellow';
+      rows += `<tr>
+        <td class="dim">${String(num).padStart(2,'0')}</td>
+        <td class="dim">${t.window_ts ? tsToDate(t.window_ts) : '---'}</td>
+        <td class="${sideClass}">${side}</td>
+        <td class="magenta">${mktShort}</td>
+        <td class="bright-cyan">${t.entry_price ? t.entry_price.toFixed(3) : '---'}</td>
+        <td class="bright-yellow">${t.exit_price ? t.exit_price.toFixed(3) : '---'}</td>
+        <td class="${pnlClass(t.pnl_percent||0)}">${pnlStr((t.pnl_percent||0)/100, true)}</td>
+        <td class="${pnlClass(t.pnl_cash||0)}">${pnlStr(t.pnl_cash||0)}</td>
+        <td class="cyan">${(t.entry_time && t.exit_time) ? formatDuration(t.exit_time - t.entry_time) : ''}</td>
+        <td class="${reasonClass}">${reason.substring(0,18)}</td></tr>`;
+    });
+    tbody.innerHTML = rows;
+  }
+
+  // Candle history
+  let ctbody = document.getElementById('candleHistoryBody');
+  if (candles.length === 0) {
+    ctbody.innerHTML = '<tr><td colspan="5" class="dim" style="text-align:center;">No candles yet</td></tr>';
+  } else {
+    let crows = '';
+    [...candles].reverse().slice(0, 4).forEach(c => {
+      let cStatus = c.status || 'WAITING';
+      let statusClass = {ENTERED:'bright-green', CLOSED:'green', SOLD:'green', SKIPPED:'yellow', FAILED:'bright-red', WAITING:'dim'}[cStatus] || 'dim';
+      let pnl = c.pnl_cash || 0;
+      let reason = c.reason || c.exit_reason || '';
+      let reasonDisplay = pnl !== 0 ? pnlHtml(pnl) : (reason ? `<span class="dim">${reason.substring(0,30)}</span>` : '<span class="dim">---</span>');
+      crows += `<tr>
+        <td class="cyan">${tsToTime(c.window_ts)}</td>
+        <td class="${statusClass}">${cStatus}</td>
+        <td>${directionHtml(c.prediction || '---')}</td>
+        <td>${confidenceHtml(c.confidence || 0)}</td>
+        <td>${reasonDisplay}</td></tr>`;
+    });
+    ctbody.innerHTML = crows;
+  }
+
+  // Logs — color-coded by keyword detection
+  let logsEl = document.getElementById('logsContainer');
+  if (logs.length === 0) {
+    logsEl.innerHTML = '<div class="dim">No logs yet</div>';
+  } else {
+    logsEl.innerHTML = logs.map(log => {
+      let text = stripAnsi(log);
+      let cls = 'dim';
+      if (/ERROR|FAILED|REBALANCE LOSS/.test(text)) cls = 'bright-red';
+      else if (/FINAL JUSTIFICATION SKIP|FJ.*SKIP/.test(text)) cls = 'bright-red';
+      else if (/COMBINED TP.*(EXIT|CLOSE)|REBALANCE PROFIT|BUY SUCCESS/.test(text)) cls = 'bright-green';
+      else if (/COMBINED TP TSL/.test(text)) cls = 'magenta';
+      else if (/FINAL JUSTIFICATION|FJ LOSER|FJ BUDGET/.test(text)) cls = 'yellow';
+      else if (/FILLED|ENTRY|ENTERED/.test(text)) cls = 'bright-cyan';
+      else if (/TRIGGER|SIGNAL/.test(text)) cls = 'bright-green';
+      else if (/SELL|EXIT/.test(text)) cls = 'magenta';
+      else if (/DCA-WIN|REBALANCE|GHOST SELL|DCA SKIP|TRAILING STOP/.test(text)) cls = 'yellow';
+      else if (/SKIP/.test(text)) cls = 'yellow';
+      return `<div class="log-entry ${cls}">${escapeHtml(text)}</div>`;
+    }).join('');
+    logsEl.scrollTop = logsEl.scrollHeight;  // Auto-scroll to latest
+  }
+
+  document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+
+  // Sync LOOSEN/TIGHTEN button state from bot snapshot
+  syncLoosenBtn('tp', data.tp_loosened === true);
+  syncLoosenBtn('sl', data.sl_loosened === true);
+
+  // Populate config input placeholders from bot's current config
+  if (data.cfg_min_confidence != null) {
+    let confEl = document.getElementById('confInput');
+    if (!confEl.value) confEl.placeholder = Math.round(data.cfg_min_confidence * 100);
+  }
+  if (data.cfg_tp_ratio != null) {
+    let tpEl = document.getElementById('tpInput');
+    if (!tpEl.value) tpEl.placeholder = data.cfg_tp_ratio > 0 ? Math.round(data.cfg_tp_ratio * 100) : '0';
+  }
+  if (data.cfg_sl_ratio != null) {
+    let slEl = document.getElementById('slInput');
+    if (!slEl.value) slEl.placeholder = data.cfg_sl_ratio > 0 ? Math.round(data.cfg_sl_ratio * 100) : '0';
+  }
+}
+
+function syncLoosenBtn(which, loosened) {
+  let btn = document.getElementById(which === 'tp' ? 'loosenTpBtn' : 'loosenSlBtn');
+  if (!btn || btn.dataset.busy === '1') return;  // don't clobber during in-flight click
+  if (loosened) {
+    btn.textContent = 'TIGHTEN ' + which.toUpperCase();
+    btn.className = 'loosen-btn success';
+  } else {
+    btn.textContent = 'LOOSEN ' + which.toUpperCase();
+    btn.className = 'loosen-btn';
+  }
+  btn.disabled = false;
+  btn.dataset.state = loosened ? 'loosened' : 'normal';
+}
+
+async function fetchDashboard() {
+  try {
+    let resp = await fetch(API_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    let raw = await resp.json();
+    // API returns array of bot snapshots — pick the latest window, then most recently saved
+    let data;
+    if (Array.isArray(raw) && raw.length > 0) {
+      // Sort by window_ts DESC first (never show older window), then saved_at DESC
+      let sorted = [...raw].sort((a, b) => {
+        let wDiff = ((b.render_kwargs?.window_ts || 0) - (a.render_kwargs?.window_ts || 0));
+        return wDiff !== 0 ? wDiff : ((b.saved_at || 0) - (a.saved_at || 0));
+      });
+      data = sorted[0];
+    } else {
+      data = raw;
+    }
+    if (data && data.saved_at && data.saved_at !== lastSavedAt) {
+      // Never go backwards to an older window
+      let newWindowTs = data.render_kwargs?.window_ts || 0;
+      if (newWindowTs < lastWindowTs) return;
+      lastWindowTs = newWindowTs;
+      lastSavedAt = data.saved_at;
+      updateDashboard(data);
+    }
+    document.getElementById('connStatus').className = 'conn-status conn-ok';
+    document.getElementById('connStatus').textContent = 'LIVE';
+  } catch (e) {
+    document.getElementById('connStatus').className = 'conn-status conn-err';
+    document.getElementById('connStatus').textContent = 'OFFLINE';
+  }
+}
+
+// --- Exit All Positions via web dashboard ---
+let exitPollTimer = null;
+async function exitAllPositions() {
+  if (demoBlock()) return;
+  let btn = document.getElementById('exitAllBtn');
+  if (!confirm('Exit ALL open positions immediately?')) return;
+  btn.disabled = true;
+  btn.textContent = 'SENDING...';
+  btn.className = 'exit-btn';
+  try {
+    let resp = await fetch('/api/dashboard/exit-all', {method: 'POST'});
+    let result = await resp.json();
+    if (!resp.ok || result.error) {
+      btn.textContent = 'ERROR: ' + (result.error || 'unknown');
+      btn.className = 'exit-btn';
+      setTimeout(() => resetExitBtn(), 4000);
+      return;
+    }
+    btn.textContent = 'WAITING FOR BOT...';
+    // Poll for result from bot
+    let target = (result.targets && result.targets[0]) || '';
+    pollExitResult(target, 0);
+  } catch (e) {
+    btn.textContent = 'NETWORK ERROR';
+    setTimeout(() => resetExitBtn(), 4000);
+  }
+}
+function pollExitResult(botId, attempt) {
+  if (attempt > 30) { resetExitBtn(); return; }  // timeout after ~30s
+  exitPollTimer = setTimeout(async () => {
+    try {
+      let resp = await fetch('/api/dashboard/exit-status?bot=' + encodeURIComponent(botId));
+      let data = await resp.json();
+      let btn = document.getElementById('exitAllBtn');
+      if (data.status === 'pending') {
+        pollExitResult(botId, attempt + 1);
+      } else if (data.status === 'success') {
+        btn.textContent = data.detail || 'EXITED OK';
+        btn.className = 'exit-btn success';
+        setTimeout(() => resetExitBtn(), 5000);
+      } else if (data.status === 'no_positions') {
+        btn.textContent = 'NO POSITIONS';
+        btn.className = 'exit-btn no-pos';
+        setTimeout(() => resetExitBtn(), 4000);
+      } else if (data.status === 'partial') {
+        btn.textContent = data.detail || 'PARTIAL EXIT';
+        btn.className = 'exit-btn';
+        setTimeout(() => resetExitBtn(), 5000);
+      } else {
+        btn.textContent = data.detail || data.status;
+        setTimeout(() => resetExitBtn(), 4000);
+      }
+    } catch (e) {
+      pollExitResult(botId, attempt + 1);
+    }
+  }, 1000);
+}
+function resetExitBtn() {
+  let btn = document.getElementById('exitAllBtn');
+  btn.textContent = 'EXIT ALL POS';
+  btn.className = 'exit-btn';
+  btn.disabled = false;
+  if (exitPollTimer) { clearTimeout(exitPollTimer); exitPollTimer = null; }
+}
+
+// --- Loosen/Tighten TP/SL toggle ---
+// LOOSEN → sets cfg ratio to 0 in-memory. Auto-reverts at window boundary
+// or on explicit TIGHTEN click. Dashboard button state is driven by the
+// tp_loosened/sl_loosened flags injected into each TUI snapshot.
+async function loosen(which) {
+  if (demoBlock()) return;
+  let btn = document.getElementById(which === 'tp' ? 'loosenTpBtn' : 'loosenSlBtn');
+  let isLoosened = btn.dataset.state === 'loosened';
+  let action = isLoosened ? 'tighten' : 'loosen';
+  btn.dataset.busy = '1';
+  btn.disabled = true;
+  btn.textContent = 'SENDING...';
+  btn.className = 'loosen-btn';
+  try {
+    let resp = await fetch('/api/dashboard/' + action + '-' + which, {method: 'POST'});
+    let result = await resp.json();
+    if (!resp.ok || result.error) {
+      btn.textContent = 'ERROR';
+      setTimeout(() => { btn.dataset.busy = ''; }, 4000);
+      return;
+    }
+    // Optimistic update — next snapshot poll will confirm via syncLoosenBtn
+    if (action === 'loosen') {
+      btn.textContent = 'TIGHTEN ' + which.toUpperCase();
+      btn.className = 'loosen-btn success';
+      btn.dataset.state = 'loosened';
+    } else {
+      btn.textContent = 'LOOSEN ' + which.toUpperCase();
+      btn.className = 'loosen-btn';
+      btn.dataset.state = 'normal';
+    }
+    btn.disabled = false;
+  } catch (e) {
+    btn.textContent = 'NETWORK ERROR';
+    setTimeout(() => { btn.dataset.busy = ''; }, 4000);
+    return;
+  }
+  // Release busy flag so next snapshot can update the button
+  setTimeout(() => { btn.dataset.busy = ''; }, 1500);
+}
+
+// --- Side toggle (YES/NO) ---
+let entrySide = 'YES';
+function setSide(side) {
+  if (demoBlock()) return;
+  entrySide = side;
+  document.getElementById('sideYesBtn').className = 'side-btn yes' + (side === 'YES' ? ' active' : '');
+  document.getElementById('sideNoBtn').className = 'side-btn no' + (side === 'NO' ? ' active' : '');
+}
+
+// --- Manual entry ---
+async function manualEntry(type, value) {
+  if (demoBlock()) return;
+  let cmd = type === 'fixed' ? `ENTER_FIXED:${value}:${entrySide}` : `ENTER_PCT:${value}:${entrySide}`;
+  let label = type === 'fixed' ? `$${value}` : `${value}%`;
+  if (!confirm(`Enter ${label} ${entrySide} on current market?`)) return;
+  let btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    let resp = await fetch('/api/dashboard/manual-entry', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cmd: cmd})
+    });
+    let result = await resp.json();
+    if (resp.ok && !result.error) {
+      btn.className = 'entry-btn sent';
+      btn.textContent = 'SENT';
+    } else {
+      btn.textContent = 'ERR';
+    }
+  } catch (e) {
+    btn.textContent = 'ERR';
+  }
+  setTimeout(() => {
+    btn.textContent = label;
+    btn.className = 'entry-btn';
+    btn.disabled = false;
+  }, 3000);
+}
+
+// --- Config overrides ---
+async function applyConfig(type) {
+  if (demoBlock()) return;
+  let inputId = type === 'confidence' ? 'confInput' : (type === 'tp' ? 'tpInput' : 'slInput');
+  let input = document.getElementById(inputId);
+  let value = input.value.trim();
+  if (type === 'confidence' && !value) value = '70';
+  if (!value) { alert('Enter a value first'); return; }
+  let cmd = type === 'confidence' ? `SET_CONFIDENCE:${value}` :
+            type === 'tp' ? `SET_TP:${value}` : `SET_SL:${value}`;
+  let btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    let resp = await fetch('/api/dashboard/set-config', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cmd: cmd})
+    });
+    let result = await resp.json();
+    if (resp.ok && !result.error) {
+      btn.className = 'config-apply sent';
+      btn.textContent = 'OK';
+    } else {
+      btn.textContent = 'ERR';
+    }
+  } catch (e) {
+    btn.textContent = 'ERR';
+  }
+  setTimeout(() => {
+    btn.textContent = 'SET';
+    btn.className = 'config-apply';
+    btn.disabled = false;
+  }, 3000);
+}
+
+fetchDashboard();
+setInterval(fetchDashboard, 1000);
+</script>
+</body>
+</html>
