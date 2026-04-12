@@ -276,7 +276,7 @@ POLYGON_RPC_URL=https://polygon-mainnet.chainstacknodes.com/your-key
 POLYGON_WS_URL=wss://polygon-mainnet.chainstacknodes.com/your-key
 
 # Trading parameters
-V7_POSITION_SIZE_USD=40
+V7_POSITION_SIZE_USD=5
 V7_BUY_BAND_LOW=0.30
 V7_BUY_BAND_HIGH=0.60
 V7_MIN_CONFIDENCE=0.70
@@ -331,7 +331,7 @@ nohup python konis-trading-v7.py --env .env --headless > /dev/null 2>&1 &
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `V7_ENTRY_PRICE` | 0.52 | Max price to pay for entry (YES or NO token) |
-| `V7_POSITION_SIZE_USD` | 40 | USD amount per position |
+| `V7_POSITION_SIZE_USD` | 5 | USD amount per position |
 | `V7_BUY_BAND_LOW` | 0.30 | Minimum acceptable price for entry |
 | `V7_BUY_BAND_HIGH` | 0.80 | Maximum acceptable price for entry |
 | `V7_BUY_MAX_ABOVE_MID` | 0.01 | Max allowed deviation above midpoint |
@@ -612,7 +612,7 @@ A: Sign up at [konis.ai](https://konis.ai). You'll receive HTTP and WebSocket en
 A: Use any Polygon RPC provider: [Chainstack](https://chainstack.com), [Alchemy](https://alchemy.com), [Infura](https://infura.io), [QuickNode](https://quicknode.com). Free tiers are usually sufficient.
 
 **Q: How much capital do I need?**
-A: Minimum $50–$100 in your Polymarket wallet. The bot trades $40 per position by default (configurable via `V7_POSITION_SIZE_USD`).
+A: Minimum $50–$100 in your Polymarket wallet. The bot trades $5 per position by default (configurable via `V7_POSITION_SIZE_USD`).
 
 **Q: Can I run multiple bots?**
 A: Yes. Use different `.env` files and `BOT_ID` values. Each bot needs its own wallet (private key).
