@@ -681,11 +681,10 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## Support the Project
+## Support the project
 
-If this project helped your trading workflow, consider supporting its development:
-
-I'm a father with two kids trying to build a startup — any help is appreciated.
+Built independently alongside a growing startup.
+If this project helped you, consider supporting its development:
 
 👉 https://paypal.me/konistech
 
