@@ -33,6 +33,36 @@ The KoNiS prediction engine analyzes real-time data from **7 centralized exchang
 
 ## How It Works
 
+The bot supports two operating modes:
+
+### Mode 1: Manual Entry (Dashboard)
+
+```env
+V7_MANAGE_POSITIONS_ONLY=true
+```
+
+In this mode, the bot does **not** auto-enter positions. Instead, you use the **KoNiS Flash Dashboard** (web UI) to manually enter and manage positions with one-click buttons.
+
+![KoNiS Flash Dashboard](images/konis-flash-dashboard.png)
+
+**Dashboard features:**
+- **ENTER YES / ENTER NO** — One-click entry on either side
+- **Position sizing** — Quick buttons ($5, $10, $20, $30) or percentage of balance (20%, 30%, 50%, 70%, 100%)
+- **Live controls** — Adjust CONF%, TP%, SL% on the fly
+- **LOOSEN TP / LOOSEN SL** — Relax thresholds for active positions
+- **EXIT ALL POS** — Emergency exit all positions immediately
+- **Real-time display** — Countdown timer, YES/NO prices, prediction bar, session stats
+
+This mode is ideal for traders who want to see the prediction data and make their own entry decisions.
+
+### Mode 2: Prediction-Based (Automated)
+
+```env
+V7_MANAGE_POSITIONS_ONLY=false
+```
+
+The bot automatically enters positions based on KoNiS AI prediction signals:
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    KoNiS Prediction Engine                      │
@@ -208,7 +238,9 @@ This uses the private key from your Polymarket account (Magic/email wallet).
 1. Go to [polymarket.com/settings](https://polymarket.com/settings)
 2. Click on your profile icon (top-right) → **Profile Settings**
 3. Your **Address** is shown on the Profile page — this is your `POLYMARKET_FUNDER` and `PROXY_WALLET`
-   - Example: `0x615B993e67b4a2E71BF4D87C16A48552Fd74a011`
+
+   ![Polymarket Address](images/polymarket-address.png)
+
    - Note: "Do not send funds to this address. This is for API use only."
 4. Go to **Trading** tab in left sidebar
 5. Export your private key (you may need to verify via email)
