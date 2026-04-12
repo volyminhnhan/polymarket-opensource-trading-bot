@@ -1,5 +1,7 @@
 # KoNiS Polymarket Trading Bot v7
 
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/konistech)
+
 **Prediction-driven automated trading bot for [Polymarket](https://polymarket.com) 5-minute binary outcome markets.**
 
 The bot uses KoNiS AI prediction signals to enter positions on the predicted winning side of 5-minute crypto markets (BTC, ETH, SOL, XRP), then holds until resolution. Winning side resolves to $1.00, losing side to $0.00.
