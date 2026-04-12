@@ -1,0 +1,22 @@
+{
+    "name": "polymarket-redeem-service",
+    "version": "1.0.0",
+    "description": "Auto-redeem resolved Polymarket positions",
+    "main": "dist/scripts/redeemResolvedPositions.js",
+    "type": "commonjs",
+    "scripts": {
+        "redeem-resolved": "ts-node src/scripts/redeemResolvedPositions.ts --loop",
+        "build": "tsc",
+        "start": "node dist/scripts/redeemResolvedPositions.js"
+    },
+    "dependencies": {
+        "axios": "^1.7.9",
+        "dotenv": "^16.4.7",
+        "ethers": "^5.8.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.10.10",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.7.3"
+    }
+}

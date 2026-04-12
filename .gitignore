@@ -1,0 +1,12 @@
+.env
+*.pyc
+__pycache__/
+.venv/
+venv/
+logs/
+*.log
+v7_session_state.json
+v7_persistent_balance.json
+v7_last_configs.env
+.choppy_pause
+.claude/
