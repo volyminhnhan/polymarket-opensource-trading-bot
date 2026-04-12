@@ -414,10 +414,12 @@ Enters both sides simultaneously at different sizes. Hedges directional risk.
 ### Cross-Market Mode
 ```env
 V7_CROSS_MARKET_TRADE=true
+V7_WINDOW_MINUTES=15
+V7_CROSS_MARKET_TRADE_WINDOW=5
 V7_CROSS_MARKET_ENTRY_MIN=4.0
 V7_CROSS_MARKET_ENTRY_MAX=11.0
 ```
-Trades based on cross-pair agreement signals across multiple crypto markets.
+Trades **15-minute markets** using **5-minute prediction data**. Set `V7_WINDOW_MINUTES=15` to target 15m markets, while the prediction engine continues generating signals every 5 minutes (`V7_CROSS_MARKET_TRADE_WINDOW=5`). The bot enters between minute 4–11 of the 15m window when prediction confidence aligns. This gives the prediction model multiple 5m cycles to confirm direction within a single longer trade window.
 
 ### Maker Mode
 ```env
