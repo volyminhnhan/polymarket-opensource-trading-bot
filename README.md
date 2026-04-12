@@ -681,6 +681,16 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
+## Support the Project
+
+If this project helped your trading workflow, consider supporting its development:
+
+I'm a father with two kids trying to build a startup — any help is appreciated.
+
+👉 https://paypal.me/konistech
+
+---
+
 ## Links
 
 - **KoNiS AI Platform:** [konis.ai](https://konis.ai)
