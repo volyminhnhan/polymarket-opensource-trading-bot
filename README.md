@@ -2,6 +2,13 @@
 
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/konistech)
 
+Built independently alongside a growing startup.
+If this project helped you, consider supporting its development:
+
+👉 https://paypal.me/konistech
+
+---
+
 **Prediction-driven automated trading bot for [Polymarket](https://polymarket.com) 5-minute binary outcome markets.**
 
 The bot uses KoNiS AI prediction signals to enter positions on the predicted winning side of 5-minute crypto markets (BTC, ETH, SOL, XRP), then holds until resolution. Winning side resolves to $1.00, losing side to $0.00.
@@ -680,15 +687,6 @@ A: Yes. Set `V7_PREDICTION_SOURCE=ws` and configure `V7_PREDICTION_WS_URL`. WebS
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-## Support the project
-
-Built independently alongside a growing startup.
-If this project helped you, consider supporting its development:
-
-👉 https://paypal.me/konistech
 
 ---
 
