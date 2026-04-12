@@ -257,7 +257,7 @@ This uses the private key from your Polymarket account (Magic/email wallet).
 5. Export your private key (you may need to verify via email)
 6. Set in your `.env`:
    ```
-   PRIVATE_KEY=0x_your_exported_private_key_here
+   PRIVATE_KEY=your_exported_private_key_here
    SIGNATURE_TYPE=1
    POLYMARKET_FUNDER=0x_your_address_from_profile
    PROXY_WALLET=0x_your_address_from_profile
@@ -270,7 +270,7 @@ This uses a standard Ethereum private key from MetaMask or any EOA wallet.
 1. Export private key from MetaMask (Account Details → Export Private Key)
 2. Set in your `.env`:
    ```
-   PRIVATE_KEY=0x_your_metamask_private_key
+   PRIVATE_KEY=your_metamask_private_key
    SIGNATURE_TYPE=2
    POLYMARKET_FUNDER=
    PROXY_WALLET=
@@ -303,7 +303,7 @@ DRY_RUN=false
 BOT_ID=my_live_bot
 
 # Wallet (see Wallet Setup section)
-PRIVATE_KEY=0x...
+PRIVATE_KEY=your_private_key
 SIGNATURE_TYPE=1
 POLYMARKET_FUNDER=0x...
 PROXY_WALLET=0x...
