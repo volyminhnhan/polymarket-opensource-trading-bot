@@ -55,6 +55,8 @@ Out of the box, **V7** works as a **standalone trading terminal** — use the we
 
 ## How It Works
 
+![KoNiS Flash Dashboard](images/konis-flash-dashboard.png)
+
 The bot supports two operating modes:
 
 ### V7 Mode 1: Manual Entry (Dashboard)
@@ -79,8 +81,6 @@ python dashboard/dashboard-server.py
 
 > **Requires Redis** running on localhost:6379. The bot publishes live state to Redis, and the dashboard reads it.
 > Install Redis: [redis.io/download](https://redis.io/download) | Ubuntu: `sudo apt install redis-server` | Mac: `brew install redis` | Windows: use [Memurai](https://www.memurai.com/) or WSL.
-
-![KoNiS Flash Dashboard](images/konis-flash-dashboard.png)
 
 **Dashboard features:**
 - **ENTER YES / ENTER NO** — One-click entry on either side
