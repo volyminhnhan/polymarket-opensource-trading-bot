@@ -55,7 +55,7 @@ Out of the box, **V7** works as a **standalone trading terminal** — use the we
 
 ## How It Works
 
-![KoNiS Flash Dashboard](images/konis-flash-dashboard.png)
+![KoNiS Flash Dashboard](images/konis-flash-dashboard-full.png)
 
 The bot supports two operating modes:
 
