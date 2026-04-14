@@ -242,7 +242,7 @@ mr-konis-pol-bot/
 - **Python** 3.10+
 - **Polymarket account** with funded wallet
 - **KoNiS API credentials** (optional) — sign up at [konis.ai](https://konis.ai) for automated prediction mode
-- **Polygon RPC endpoint** — from [Chainstack](https://chainstack.com), [Alchemy](https://alchemy.com), [Infura](https://infura.io), or similar
+- **Polygon RPC endpoint** — already provided if you register via [konis.ai](https://konis.ai); otherwise use [Chainstack](https://chainstack.com), [Alchemy](https://alchemy.com), [Infura](https://infura.io), or similar
 - **Redis** — required for dashboard and bot communication
 - **MongoDB** (optional) — for trade history persistence
 
@@ -367,7 +367,7 @@ V7_PREDICTION_API_URL=<your_konis_prediction_url>
 PREDICTION_USERNAME=<your_konis_username>
 PREDICTION_PASSWORD=<your_konis_password>
 
-# Blockchain RPC (from Chainstack/Alchemy/Infura)
+# Blockchain RPC (already provided if registered via konis.ai; otherwise from Chainstack/Alchemy/Infura)
 POLYGON_RPC_URL=https://polygon-mainnet.chainstacknodes.com/your-key
 POLYGON_WS_URL=wss://polygon-mainnet.chainstacknodes.com/your-key
 
@@ -655,7 +655,7 @@ npm install
 The service reads from the same `.env` file as the bot (project root). Required env vars:
 - `PRIVATE_KEY` — same wallet key as the bot
 - `PROXY_WALLET` or `POLYMARKET_FUNDER` — your Polymarket address
-- `POLYGON_RPC_URL` — Polygon RPC endpoint
+- `POLYGON_RPC_URL` — Polygon RPC endpoint (already provided if registered via [konis.ai](https://konis.ai))
 
 ### Run Once
 
@@ -701,7 +701,7 @@ Polymarket Data API → Filter resolved positions → On-chain redeemPositions()
 A: Sign up at [konis.ai](https://konis.ai). You'll receive HTTP and WebSocket endpoint URLs plus credentials.
 
 **Q: Where do I get Polygon RPC?**
-A: Use any Polygon RPC provider: [Chainstack](https://chainstack.com), [Alchemy](https://alchemy.com), [Infura](https://infura.io), [QuickNode](https://quicknode.com). Free tiers are usually sufficient.
+A: If you registered via [konis.ai](https://konis.ai), the Polygon RPC is already provided inside the bot — no extra setup needed. Otherwise, use any Polygon RPC provider: [Chainstack](https://chainstack.com), [Alchemy](https://alchemy.com), [Infura](https://infura.io), [QuickNode](https://quicknode.com). Free tiers are usually sufficient.
 
 **Q: How much capital do I need?**
 A: Minimum $50–$100 in your Polymarket wallet. The bot trades $5 per position by default (configurable via `V7_POSITION_SIZE_USD`).
