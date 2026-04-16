@@ -1,3 +1,6 @@
+⭐ Noticed many people cloning the repo — if you find it useful, a star would really help!
+
+
 # Open Source Polymarket Trading Bot
 
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/konistech)
